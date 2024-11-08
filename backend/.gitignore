@@ -1,0 +1,21 @@
+# Node modules
+node_modules/
+
+# Variables de entoreno
+.env
+
+# encrypt contrasena
+encrypt-password.js
+
+# variables de entorno online
+VE_Online.txt
+
+# Logs
+logs/
+*.log
+
+# Build
+build/
+
+# npm-debug
+npm-debug.log*
