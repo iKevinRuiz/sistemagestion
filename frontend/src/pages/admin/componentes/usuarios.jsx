@@ -1,5 +1,5 @@
 import React from "react";
-import { Button } from "react-bootstrap";
+import { Button, Table } from "react-bootstrap";
 import { Link } from "react-router-dom";
 
 
@@ -8,9 +8,36 @@ function Usuarios() {
         <>
             <div>
                 <h2>Usuarios</h2>
-                <Link to='registerAdmin'>
-                    <Button>Registrar usuario</Button>
-                </Link>
+                <Table striped bordered hover>
+                    <thead>
+                        <tr>
+                            <th>CC</th>
+                            <th>First Name</th>
+                            <th>Last Name</th>
+                            <th>email</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>1</td>
+                            <td>Mark</td>
+                            <td>Otto</td>
+                            <td>@mdo</td>
+                            <td>
+                                <Button>
+                                    Editar
+                                </Button>
+                                <Button>
+                                    Consultar
+                                </Button>
+                                <Button>
+                                    Inhabilitar
+                                </Button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </Table>
             </div>
         </>
     )

@@ -44,7 +44,7 @@ function LoginApp() {
                 navigate('/dashboard');
             } else {
                 // Si el rol es diferente a 1 (suponiendo que sea cliente), redirigir a /tienda
-                navigate('/tienda');
+                navigate('/dashboard');
             }
 
         } catch (error) {
