@@ -13,8 +13,15 @@ function RegisterApp() {
         password: '',
         phone: '',
         direccion: '',
+        municipio: '',  // Nuevo campo municipio
         idRole: 2
     });
+
+    // Lista de municipios (simplificada para este ejemplo)
+    const municipios = [
+        'Bogotá', 'Medellín', 'Cali', 'Barranquilla', 'Cartagena',
+        'Bucaramanga', 'Pereira', 'Manizales', 'Santa Marta', 'Cúcuta'
+    ];
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -84,6 +91,9 @@ function RegisterApp() {
                                                     className="w-100"
                                                 />
                                             </Form.Group>
+                                            <Form.Group className="m-3">
+                                                
+                                            </Form.Group>
                                         </Col>
                                         <Col>
                                             <Form.Group className="m-3">
@@ -116,6 +126,20 @@ function RegisterApp() {
                                                     className="w-100"
                                                 />
                                             </Form.Group>
+                                            <Form.Label>Municipio</Form.Label> {/* Campo tipo select */}
+                                                <Form.Select
+                                                    name="municipio"
+                                                    onChange={handleChange}
+                                                    value={formData.municipio}
+                                                    className="w-100"
+                                                >
+                                                    <option value="">Selecciona un municipio</option>
+                                                    {municipios.map((municipio, index) => (
+                                                        <option key={index} value={municipio}>
+                                                            {municipio}
+                                                        </option>
+                                                    ))}
+                                                </Form.Select>
                                         </Col>
                                     </Row>
                                     <Button variant="primary" type="submit" className="w-100">Registrar</Button>

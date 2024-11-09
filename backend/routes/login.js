@@ -1,12 +1,13 @@
-// login.js
+// routes/login.js
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const db = require('../config/conection'); // Importar la conexión a la base de datos
+const db = require('../config/conection'); // Asegúrate de que la conexión a la base de datos esté correcta
 
 const router = express.Router();
 
-router.post('/api/users/login', (req, res) => {
+// Ruta de login
+router.post('/users/login', (req, res) => {
     const { email, password } = req.body;
 
     if (!email || !password) {
