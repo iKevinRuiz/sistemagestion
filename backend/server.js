@@ -7,6 +7,7 @@ const loginRoutes = require('./routes/login');
 const resetPassRoutes = require('./routes/restPass');
 // fin de import rutas
 
+const infUsuario = require ('./routes/userRoutes');
 const app = express();
 app.use(cors());
 app.use(express.json());
@@ -18,6 +19,7 @@ app.use(loginRoutes);
 app.use(resetPassRoutes); // Asegúrate de usar el prefijo '/api' aquí también
 //fin de rutas
 
+app.use('/api', infUsuario)
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`Server iniciado en http://localhost:${PORT}`);

@@ -6,6 +6,7 @@ import AdminDashboard from './pages/admin/dashboard';
 import ForgotPass from './pages/ForgotPass';
 import RegisterAdmin from './pages/admin/componentes/registerAdmin';
 import ResetPassword from './pages/RestPass';
+import RegisterApp from './pages/Register';
 
 const AppRoutes = () => {
     return (
@@ -15,6 +16,7 @@ const AppRoutes = () => {
             <Route path='/dashboard/registerAdmin' element={<RegisterAdmin />} />
             <Route path='/forgot-password' element={<ForgotPass />} />
             <Route path='/reset-password/:token' element={<ResetPassword />} />
+            <Route path='/register' element={<RegisterApp />} />
         </Routes>
     );
 };
