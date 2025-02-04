@@ -19,39 +19,48 @@ function LoginApp() {
 
     const handleLogin = async (e) => {
         e.preventDefault();
-
+    
         if (!email || !password) {
             setErrorMessage('Por favor ingrese su correo y contraseña.');
             return;
         }
-
+    
         try {
             // Enviar la solicitud al backend para hacer el login
             const response = await axios.post('http://localhost:5000/api/users/login', {
                 email,
                 password,
             });
-
-            // Almacenar el token en localStorage
+    
+            // Verifica lo que llega en la respuesta
+            console.log(response.data);
+    
+            // Almacenar el token y rol en localStorage
             localStorage.setItem('token', response.data.token);
+            localStorage.setItem('role', response.data.role); // Guardar el rol del usuario
+            localStorage.setItem('firstName', response.data.firstName);  // Guardar el primer nombre
 
-            // Revisar el idRole recibido en la respuesta
-            const userRole = response.data.role;
 
+    
             // Redirigir según el rol
+            const userRole = response.data.role;
             if (userRole === 1) {
-                // Si el rol es 'admin', redirigir a /dashboard
                 navigate('/dashboard');
             } else {
-                // Si el rol es diferente a 1 (suponiendo que sea cliente), redirigir a /tienda
                 navigate('/dashboard');
             }
-
+    
         } catch (error) {
             console.error('Error al iniciar sesión:', error);
-            setErrorMessage('Correo o contraseña incorrectos.');
+            if (error.response && error.response.status === 403) {
+                setErrorMessage('Usuario inhabilitado. Contacte al administrador.');
+            } else {
+                setErrorMessage('Correo o contraseña incorrectos.');
+            }
         }
     };
+    
+    
 
     return (
         <>
@@ -89,7 +98,7 @@ function LoginApp() {
                                         <Button variant="primary" className="w-100" type="submit">
                                             Ingresar
                                         </Button>
-                                    </Form>
+                                    </Form> 
                                 </Card.Body>
                                 <Row>
                                     <Col>

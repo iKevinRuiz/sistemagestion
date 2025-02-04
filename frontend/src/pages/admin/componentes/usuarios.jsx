@@ -1,224 +1,290 @@
 import React, { useEffect, useState } from "react";
-import { Button, Table, Modal, Form } from "react-bootstrap";
+import { Button, Table, Modal, Form, Alert } from "react-bootstrap";
 import axios from "axios";
 
 function Usuarios() {
-  const [usuarios, setUsuarios] = useState([]);
-  const [showEditModal, setShowEditModal] = useState(false); // Para controlar la visibilidad del modal
-  const [editedData, setEditedData] = useState({
-    idUser: "",
-    idRole: "",
-    cedula: "",
-    nombre: "",
-    apellido: "",
-    email: "",
-    phone: "",
-    direccion: "",
-    municipio: "",
-  });
+    const [users, setUsers] = useState([]);
+    const [selectedUser, setSelectedUser] = useState(null);
+    const [showEditModal, setShowEditModal] = useState(false);
+    const [showConsultModal, setShowConsultModal] = useState(false);
+    const [userData, setUserData] = useState({
+        idUser: "",
+        cedula: "",
+        firstName: "",
+        lastName: "",
+        idRole: "",
+        email: "",
+        phone: "",
+        direccion: "",
+        municipio: "",
+        estado: "activo",
+    });
+    const [consultData, setConsultData] = useState({});
+    const [error, setError] = useState("");
+    const userRole = localStorage.getItem('role'); // Leer el rol del usuario
+    // Obtener datos del usuario logueado desde localStorage o realizar otra llamada a la API si es necesario
+    const [loggedUserName, setLoggedUserName] = useState(localStorage.getItem('firstName') || '');
 
-  // Obtener los usuarios del backend
-  useEffect(() => {
-    axios.get("http://localhost:5000/api/usuarios")
-      .then((response) => {
-        setUsuarios(response.data);
-      })
-      .catch((error) => {
-        console.error("Error al obtener los usuarios:", error);
-      });
-  }, []);
+    useEffect(() => {
+        // Verificar si el nombre del usuario ya está almacenado en el localStorage
+        const storedName = localStorage.getItem('firstName');
+        if (storedName) {
+            setLoggedUserName(storedName);
+        }
 
-  // Función para manejar la edición
-  const handleEdit = (id) => {
-    const usuario = usuarios.find((user) => user.idUser === id);
-    if (usuario) {
-      setEditedData({
-        idUser: usuario.idUser,
-        idRole: usuario.idRole,
-        cedula: usuario.cedula,
-        nombre: usuario.nombre,
-        apellido: usuario.apellido,
-        email: usuario.email,
-        phone: usuario.phone,
-        direccion: usuario.direccion,
-        municipio: usuario.municipio,
-      });
-      setShowEditModal(true); // Mostrar el modal de edición
-    }
-  };
+        const fetchUserData = async () => {
+            try {
+                const token = localStorage.getItem('token');
+                const response = await axios.get('http://localhost:5000/api/users/all', {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+                setUsers(response.data);
+            } catch (error) {
+                console.error("Error al obtener los datos de los usuarios:", error);
+            }
+        };
 
-  // Función para manejar cambios en el formulario de edición
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setEditedData((prevData) => ({
-      ...prevData,
-      [name]: value,
-    }));
-  };
+        fetchUserData();
+    }, []);
 
-  // Función para manejar el envío del formulario de edición
-  const handleSave = () => {
-    axios.put(`http://localhost:5000/api/usuarios/editar/${editedData.idUser}`, editedData)
-      .then((response) => {
-        // Actualizamos el estado de los usuarios para reflejar el cambio
-        const updatedUser = response.data;
+    const handleEditClick = (user) => {
+        setSelectedUser(user);
+        setUserData({ ...user });
+        setShowEditModal(true);
+    };
 
-        setUsuarios(usuarios.map((usuario) =>
-          usuario.idUser === updatedUser.idUser ? { ...usuario, ...updatedUser } : usuario
-        ));
+    const handleConsultClick = (user) => {
+        const { estado, ...consultUserData } = user;
+        setConsultData(consultUserData);
+        setShowConsultModal(true);
+    };
 
-        setShowEditModal(false); // Cerrar el modal después de guardar
-        alert('Usuario actualizado correctamente');
-      })
-      .catch((error) => {
-        console.error('Error al editar el usuario:', error.response ? error.response.data : error.message);
-        alert('Hubo un problema al actualizar el usuario');
-      });
-  };
+    const handleInputChange = (e) => {
+        const { name, value } = e.target;
+        setUserData((prevData) => ({
+            ...prevData,
+            [name]: value,
+        }));
+    };
 
-  // Función para manejar la consulta
-  const handleConsult = (id) => {
-    axios.get(`http://localhost:5000/api/usuarios/consultar/${id}`)
-      .then((response) => {
-        alert(`Nombre: ${response.data.nombre}\nEmail: ${response.data.email}`);
-      })
-      .catch((error) => {
-        console.error("Error al consultar el usuario:", error);
-      });
-  };
+    const validateForm = () => {
+        if (!userData.firstName || !userData.lastName || !userData.email || !userData.phone) {
+            setError("Todos los campos son obligatorios.");
+            return false;
+        }
+        setError("");
+        return true;
+    };
 
-  // Función para manejar la inhabilitación
-  const handleDisable = (id) => {
-    axios.put(`http://localhost:5000/api/usuarios/inhabilitar/${id}`)
-      .then((response) => {
-        setUsuarios(usuarios.map((usuario) =>
-          usuario.idUser === id ? { ...usuario, estado: "inhabilitado" } : usuario
-        ));
-        alert("Usuario inhabilitado correctamente");
-      })
-      .catch((error) => {
-        console.error("Error al inhabilitar el usuario:", error);
-      });
-  };
+    const handleUpdateUser = async () => {
+        if (!validateForm()) return;
+    
+        try {
+            const token = localStorage.getItem('token');
+            await axios.put(
+                `http://localhost:5000/api/users/${userData.idUser}`,
+                userData,
+                {
+                    headers: { Authorization: `Bearer ${token}` },
+                }
+            );
+            setShowEditModal(false);
+            setUsers((prevUsers) =>
+                prevUsers.map((user) =>
+                    user.idUser === userData.idUser ? { ...user, ...userData } : user
+                )
+            );
+    
+            // Actualiza el localStorage con el nuevo firstName
+            localStorage.setItem('firstName', userData.firstName);
+            setLoggedUserName(userData.firstName);  // Asegura que el estado también se actualice
+    
+        } catch (error) {
+            console.error("Error al actualizar los datos del usuario:", error);
+        }
+    };
+    
 
-  return (
-    <>
-      <h2>Usuarios</h2>
-      <Table striped bordered hover>
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>ID Role</th>
-            <th>Cédula</th>
-            <th>Nombre</th>
-            <th>Apellido</th>
-            <th>Email</th>
-            <th>Teléfono</th>
-            <th>Dirección</th>
-            <th>Municipio</th>
-            <th>Fecha de Creación</th>
-            <th>Estado</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          {usuarios.length > 0 ? (
-            usuarios.map((usuario) => (
-              <tr key={usuario.idUser}>
-                <td>{usuario.idUser}</td>
-                <td>{usuario.idRole}</td>
-                <td>{usuario.cedula}</td>
-                <td>{usuario.nombre}</td>
-                <td>{usuario.apellido}</td>
-                <td>{usuario.email}</td>
-                <td>{usuario.phone}</td>
-                <td>{usuario.direccion}</td>
-                <td>{usuario.municipio}</td>
-                <td>{usuario.fechaCreacion}</td>
-                <td>{usuario.estado}</td>
-                <td>
-                  <Button onClick={() => handleConsult(usuario.idUser)} variant="info">Consultar</Button>
-                  <Button onClick={() => handleEdit(usuario.idUser)} variant="warning">Editar</Button>
-                  <Button onClick={() => handleDisable(usuario.idUser)} variant="danger">Inhabilitar</Button>
-                </td>
-              </tr>
-            ))
-          ) : (
-            <tr>
-              <td colSpan="12">No hay usuarios disponibles</td>
-            </tr>
-          )}
-        </tbody>
-      </Table>
-      <Modal show={showEditModal} onHide={() => setShowEditModal(false)}>
-        <Modal.Header closeButton>
-          <Modal.Title>Editar Usuario</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <Form>
-            <Form.Group controlId="formNombre">
-              <Form.Label>Nombre</Form.Label>
-              <Form.Control
-                type="text"
-                name="nombre"
-                value={editedData.nombre}
-                onChange={handleInputChange}
-              />
-            </Form.Group>
-            <Form.Group controlId="formApellido">
-              <Form.Label>Apellido</Form.Label>
-              <Form.Control
-                type="text"
-                name="apellido"
-                value={editedData.apellido}
-                onChange={handleInputChange}
-              />
-            </Form.Group>
-            <Form.Group controlId="formEmail">
-              <Form.Label>Email</Form.Label>
-              <Form.Control
-                type="email"
-                name="email"
-                value={editedData.email}
-                onChange={handleInputChange}
-              />
-            </Form.Group>
-            <Form.Group controlId="formPhone">
-              <Form.Label>Teléfono</Form.Label>
-              <Form.Control
-                type="text"
-                name="phone"
-                value={editedData.phone}
-                onChange={handleInputChange}
-              />
-            </Form.Group>
-            <Form.Group controlId="formDireccion">
-              <Form.Label>Dirección</Form.Label>
-              <Form.Control
-                type="text"
-                name="direccion"
-                value={editedData.direccion}
-                onChange={handleInputChange}
-              />
-            </Form.Group>
-            <Form.Group controlId="formMunicipio">
-              <Form.Label>Municipio</Form.Label>
-              <Form.Control
-                type="text"
-                name="municipio"
-                value={editedData.municipio}
-                onChange={handleInputChange}
-              />
-            </Form.Group>
-          </Form>
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowEditModal(false)}>Cancelar</Button>
-          <Button variant="primary" onClick={handleSave}>Guardar cambios</Button>
-        </Modal.Footer>
-      </Modal>
-    </>
-  );
+    return (
+        <div>
+            <h2>Bienvenido (a)</h2>
+            {/* Mostrar el nombre del usuario logueado 
+            <h2>Bienvenido: {loggedUserName}</h2>*/}
+
+            <Table striped bordered hover>
+                <thead>
+                    <tr>
+                        <th>Id</th>
+                        <th>CC</th>
+                        <th>Nombre</th>
+                        <th>Apellido</th>
+                        <th>Rol</th>
+                        <th>Correo</th>
+                        <th>Celular</th>
+                        <th>Direccion</th>
+                        <th>Municipio</th>
+                        <th>Estado</th>
+                        <th>Acción</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {users.length > 0 ? (
+                        users.map((user) => (
+                            <tr key={user.idUser}>
+                                <td>{user.idUser}</td>
+                                <td>{user.cedula}</td>
+                                <td>{user.firstName}</td>
+                                <td>{user.lastName}</td>
+                                <td>{user.idRole}</td>
+                                <td>{user.email}</td>
+                                <td>{user.phone}</td>
+                                <td>{user.direccion}</td>
+                                <td>{user.municipio}</td>
+                                <td>{user.estado}</td>
+                                <td>
+                                    <Button
+                                        variant="primary"
+                                        onClick={() => handleEditClick(user)}
+                                        disabled={userRole !== '1'} // Deshabilitado si el rol no es '1'
+                                    >
+                                        Editar
+                                    </Button>{' '}
+                                    <Button variant="info" onClick={() => handleConsultClick(user)}>
+                                        Consultar
+                                    </Button>{' '}
+                                </td>
+                            </tr>
+                        ))
+                    ) : (
+                        <tr>
+                            <td colSpan="11" className="text-center">Cargando...</td>
+                        </tr>
+                    )}
+                </tbody>
+            </Table>
+
+            {/* Modal de edición */}
+            <Modal show={showEditModal} onHide={() => setShowEditModal(false)}>
+                <Modal.Header closeButton>
+                    <Modal.Title>Editar Usuario</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                    {error && <Alert variant="danger">{error}</Alert>}
+                    <Form>
+                        <div className="row">
+                            <div className="col-md-6">
+                                <Form.Group controlId="formFirstName">
+                                    <Form.Label>Nombre</Form.Label>
+                                    <Form.Control
+                                        type="text"
+                                        name="firstName"
+                                        value={userData.firstName}
+                                        onChange={handleInputChange}
+                                    />
+                                </Form.Group>
+                            </div>
+                            <div className="col-md-6">
+                                <Form.Group controlId="formLastName">
+                                    <Form.Label>Apellido</Form.Label>
+                                    <Form.Control
+                                        type="text"
+                                        name="lastName"
+                                        value={userData.lastName}
+                                        onChange={handleInputChange}
+                                    />
+                                </Form.Group>
+                            </div>
+                        </div>
+
+                        <div className="row">
+                            <div className="col-md-6">
+                                <Form.Group controlId="formEmail">
+                                    <Form.Label>Correo</Form.Label>
+                                    <Form.Control
+                                        type="email"
+                                        name="email"
+                                        value={userData.email}
+                                        onChange={handleInputChange}
+                                    />
+                                </Form.Group>
+                            </div>
+                            <div className="col-md-6">
+                                <Form.Group controlId="formPhone">
+                                    <Form.Label>Celular</Form.Label>
+                                    <Form.Control
+                                        type="text"
+                                        name="phone"
+                                        value={userData.phone}
+                                        onChange={handleInputChange}
+                                    />
+                                </Form.Group>
+                            </div>
+                        </div>
+
+                        <div className="row">
+                            <div className="col-md-6">
+                                <Form.Group controlId="formDireccion">
+                                    <Form.Label>Dirección</Form.Label>
+                                    <Form.Control
+                                        type="text"
+                                        name="direccion"
+                                        value={userData.direccion}
+                                        onChange={handleInputChange}
+                                    />
+                                </Form.Group>
+                            </div>
+                            <div className="col-md-6">
+                                <Form.Group controlId="formMunicipio">
+                                    <Form.Label>Municipio</Form.Label>
+                                    <Form.Control
+                                        type="text"
+                                        name="municipio"
+                                        value={userData.municipio}
+                                        onChange={handleInputChange}
+                                    />
+                                </Form.Group>
+                            </div>
+                        </div>
+
+                        <Form.Group controlId="formEstado">
+                            <Form.Label>Estado</Form.Label>
+                            <Form.Control
+                                as="select"
+                                name="estado"
+                                value={userData.estado}
+                                onChange={handleInputChange}
+                            >
+                                <option value="activo">Activo</option>
+                                <option value="inhabilitado">Inhabilitado</option>
+                            </Form.Control>
+                        </Form.Group>
+                    </Form>
+                </Modal.Body>
+                <Modal.Footer>
+                    <Button variant="secondary" onClick={() => setShowEditModal(false)}>Cerrar</Button>
+                    <Button variant="primary" onClick={handleUpdateUser}>Actualizar</Button>
+                </Modal.Footer>
+            </Modal>
+
+            {/* Modal de consulta */}
+            <Modal show={showConsultModal} onHide={() => setShowConsultModal(false)}>
+                <Modal.Header closeButton>
+                    <Modal.Title>Consultar Usuario</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                    <p><strong>Nombre:</strong> {consultData.firstName} {consultData.lastName}</p>
+                    <p><strong>CC:</strong> {consultData.cedula}</p>
+                    <p><strong>Correo:</strong> {consultData.email}</p>
+                    <p><strong>Celular:</strong> {consultData.phone}</p>
+                    <p><strong>Dirección:</strong> {consultData.direccion}</p>
+                    <p><strong>Municipio:</strong> {consultData.municipio}</p>
+                </Modal.Body>
+                <Modal.Footer>
+                    <Button variant="secondary" onClick={() => setShowConsultModal(false)}>Cerrar</Button>
+                </Modal.Footer>
+            </Modal>
+        </div>
+    );
 }
 
 export default Usuarios;

@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import { Container, Button, Row, Col, Card, Form } from 'react-bootstrap';
 import { useNavigate } from "react-router-dom";
+import { FaTimes } from 'react-icons/fa'; // Para el ícono de la "X"
+import municipiosData from './admin/componentes/municipios'; // Asegúrate de que esta ruta sea correcta
 
 function RegisterApp() {
     const navigate = useNavigate();
@@ -13,15 +15,42 @@ function RegisterApp() {
         password: '',
         phone: '',
         direccion: '',
-        municipio: '',  // Nuevo campo municipio
-        idRole: 2
+        idRole: 2,
+        municipio: ''  // Municipio seleccionado
     });
 
-    // Lista de municipios (simplificada para este ejemplo)
-    const municipios = [
-        'Bogotá', 'Medellín', 'Cali', 'Barranquilla', 'Cartagena',
-        'Bucaramanga', 'Pereira', 'Manizales', 'Santa Marta', 'Cúcuta'
-    ];
+    const [searchQuery, setSearchQuery] = useState('');
+    const [filteredMunicipios, setFilteredMunicipios] = useState([]);
+    const [isMunicipioSelected, setIsMunicipioSelected] = useState(false);  // Estado para saber si el municipio fue seleccionado
+
+    // Filtrar municipios basados en la búsqueda
+    const handleSearchChange = (e) => {
+        const query = e.target.value;
+        setSearchQuery(query);
+
+        // Filtrar los municipios que coinciden con la búsqueda
+        if (query) {
+            const municipiosDisponibles = municipiosData
+                .flatMap(dpto => dpto.ciudades)  // Obtener todos los municipios
+                .filter(municipio => municipio.toLowerCase().includes(query.toLowerCase()));
+            setFilteredMunicipios(municipiosDisponibles);
+        } else {
+            setFilteredMunicipios([]);
+        }
+    };
+
+    const handleMunicipioSelect = (municipio) => {
+        setFormData({ ...formData, municipio });
+        setSearchQuery(municipio);
+        setIsMunicipioSelected(true);  // El municipio fue seleccionado
+        setFilteredMunicipios([]);  // Ocultar la lista después de seleccionar
+    };
+
+    const handleMunicipioClear = () => {
+        setFormData({ ...formData, municipio: '' });  // Borrar el municipio seleccionado
+        setSearchQuery('');  // Limpiar la búsqueda
+        setIsMunicipioSelected(false);  // Permitir la búsqueda nuevamente
+    };
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -29,6 +58,7 @@ function RegisterApp() {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        console.log('Datos a enviar:', formData); // Verifica los datos que se están enviando
         try {
             const response = await axios.post('http://localhost:5000/api/users/register', formData);
             console.log(response.data.message);
@@ -91,9 +121,6 @@ function RegisterApp() {
                                                     className="w-100"
                                                 />
                                             </Form.Group>
-                                            <Form.Group className="m-3">
-                                                
-                                            </Form.Group>
                                         </Col>
                                         <Col>
                                             <Form.Group className="m-3">
@@ -126,20 +153,51 @@ function RegisterApp() {
                                                     className="w-100"
                                                 />
                                             </Form.Group>
-                                            <Form.Label>Municipio</Form.Label> {/* Campo tipo select */}
-                                                <Form.Select
-                                                    name="municipio"
-                                                    onChange={handleChange}
-                                                    value={formData.municipio}
-                                                    className="w-100"
-                                                >
-                                                    <option value="">Selecciona un municipio</option>
-                                                    {municipios.map((municipio, index) => (
-                                                        <option key={index} value={municipio}>
-                                                            {municipio}
-                                                        </option>
-                                                    ))}
-                                                </Form.Select>
+                                            <Form.Group className="m-3">
+                                                <Form.Label>Municipio</Form.Label>
+                                                <div style={{ position: 'relative' }}>
+                                                    <Form.Control
+                                                        type="text"
+                                                        name="municipio"
+                                                        onChange={handleSearchChange}
+                                                        value={searchQuery}
+                                                        className="w-100"
+                                                        placeholder="Escribe el municipio"
+                                                        readOnly={isMunicipioSelected} // Hacer solo lectura después de seleccionar
+                                                    />
+                                                    {/* Mostrar la X para borrar */}
+                                                    {isMunicipioSelected && (
+                                                        <span
+                                                            onClick={handleMunicipioClear}
+                                                            style={{
+                                                                position: 'absolute',
+                                                                top: '50%',
+                                                                right: '10px',
+                                                                transform: 'translateY(-50%)',
+                                                                cursor: 'pointer',
+                                                                color: 'blue', // Azul
+                                                                fontSize: '18px',
+                                                            }}
+                                                        >
+                                                            <FaTimes />
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                {/* Mostrar los municipios filtrados */}
+                                                {filteredMunicipios.length > 0 && searchQuery && !isMunicipioSelected && (
+                                                    <ul className="list-group mt-2" style={{ maxHeight: '200px', overflowY: 'auto' }}>
+                                                        {filteredMunicipios.map((municipio, index) => (
+                                                            <li
+                                                                key={index}
+                                                                className="list-group-item"
+                                                                onClick={() => handleMunicipioSelect(municipio)}
+                                                            >
+                                                                {municipio}
+                                                            </li>
+                                                        ))}
+                                                    </ul>
+                                                )}
+                                            </Form.Group>
                                         </Col>
                                     </Row>
                                     <Button variant="primary" type="submit" className="w-100">Registrar</Button>
@@ -150,7 +208,7 @@ function RegisterApp() {
                 </Col>
             </Row>
         </Container>
-    )
+    );
 }
 
 export default RegisterApp;

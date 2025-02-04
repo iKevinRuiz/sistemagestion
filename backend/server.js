@@ -1,33 +1,24 @@
-// server.js
 const express = require('express');
 const cors = require('cors');
-const dotenv = require('dotenv');
 
-// Importar rutas de los diferentes módulos
+// Importa las rutas
 const registerRoutes = require('./routes/register');
 const loginRoutes = require('./routes/login');
 const resetPassRoutes = require('./routes/restPass');
-const infUsuario = require('./routes/userRoutes');
+const userRoutes = require('./routes/userRouter'); // Asegúrate de importar las rutas de usuarios correctamente
 
 const app = express();
-
-// Configuración de CORS
 app.use(cors());
-
-// Configurar para que Express use JSON en las peticiones
 app.use(express.json());
+require('dotenv').config();
 
-// Cargar las variables de entorno
-dotenv.config();
-
-// Rutas de la API
+// Rutas de los endpoints
 app.use('/api', registerRoutes);
-app.use('/api', loginRoutes);       // Asegúrate de que loginRoutes esté correctamente configurado
-app.use('/api', resetPassRoutes);
-app.use('/api', infUsuario);        // Ruta para la gestión de usuarios
+app.use(loginRoutes);
+app.use(resetPassRoutes);
+app.use('/api', userRoutes); // Aquí estamos usando el prefijo "/api" para las rutas de usuarios
 
-// Configuración del puerto
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
-    console.log(`Servidor corriendo en http://localhost:${PORT}`);
+    console.log(`Server iniciado en http://localhost:${PORT}`);
 });
